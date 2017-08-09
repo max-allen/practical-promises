@@ -42,7 +42,7 @@ describe('For a given promiseA (pA)', function(){
   // Our parent promise must maintain some kind of reference to the downstream
   // promise, in order to control chaining.
 
-  xit('`.then` adds a new promise to its handler group', function(){
+  it('`.then` adds a new promise to its handler group', function(){
     promiseA.then();
     var groups = promiseA._handlerGroups;
     expect( groups[0].downstreamPromise instanceof $Promise ).toBe( true );

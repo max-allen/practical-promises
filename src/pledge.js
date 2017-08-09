@@ -10,6 +10,9 @@ function $Promise(executor){
 
 	this._state = 'pending';
 	this._value;
+	this._handlerGroups = [];
+	this.set = false;
+	this.current;
 	
 	const resolve = function(data){
 		this._internalResolve(data)
@@ -27,6 +30,13 @@ $Promise.prototype._internalResolve = function (data) {
 		this._value = data
 		this._state = 'fulfilled'
 	}
+	if(this.set === true){
+		for(var i = 0; i < this._handlerGroups.length; i++){
+			this._handlerGroups[i].successCb(data);
+			this._handlerGroups.splice(0,1);
+			i--;
+		}
+	}
 }
 
 $Promise.prototype._internalReject = function (reason) {
@@ -34,6 +44,49 @@ $Promise.prototype._internalReject = function (reason) {
 		this._value = reason;
 		this._state = 'rejected'
 	}
+	if(this.set === true){
+		for(var i = 0; i < this._handlerGroups.length; i++){
+			this._handlerGroups[i].errorCb(reason);
+			// this._handlerGroups.splice(0,1);
+			// this--;
+		}
+
+	}
+
+}
+
+$Promise.prototype.callHandlers = function(handler){
+	handler(this._value);
+}
+
+$Promise.prototype.then = function(resFunc,rejFunc){
+	if(typeof resFunc !== 'function'){
+		resFunc = false;
+	}
+	if(typeof rejFunc !== 'function'){
+		rejFunc = false;
+	}
+
+	let x = {successCb: resFunc,errorCb: rejFunc};
+	this._handlerGroups.push(x);
+	
+	if(resFunc !== false){
+		if(this._state === 'fulfilled'){
+			this.callHandlers(resFunc);
+		}
+		this.set = true;
+	}else{
+		if(this._state === 'rejected'){
+			this.callHandlers(rejFunc);
+		}
+		this.set = true;
+		this.current = rejFunc;		
+	}
+	// this._handlerGroups.downstreamPromise = new $Promise;
+}
+
+$Promise.prototype.catch = function(opFunc){
+	this.then(null,opFunc);
 }
 
 /*-------------------------------------------------------
